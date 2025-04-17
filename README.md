@@ -1,9 +1,9 @@
 # fastapi-rag-app
 FastAPI + Ollama + PGVector based RAG (Retrieval-Augmented Generation) system with document ingestion and Q&amp;A APIs.
 
-# 📚 FastAPI RAG App
+## 📚 FastAPI RAG App
 
-This is a **Retrieval-Augmented Generation (RAG)** application powered by **FastAPI**, **LangChain**, **Ollama (LLaMA 3)**, and **PostgreSQL with pgvector**. It enables document ingestion, vector embedding, and natural language Q&A over your content.
+This is a **Retrieval-Augmented Generation (RAG)** application powered by **FastAPI**, **LangChain**, **Ollama (LLaMA 3)**, and **PostgreSQL with pgvector**. It enables document ingestion, vector embeddings, and Q&A functionality.
 
 ---
 
@@ -32,6 +32,31 @@ This is a **Retrieval-Augmented Generation (RAG)** application powered by **Fast
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/<your-username>/fastapi-rag-app.git
+git clone https://github.com/harshvardhan30/fastapi-rag-app.git
 cd fastapi-rag-app
+```
+
+### 2. Install dependencies
+
+Ensure you have Python 3.8 or later installed. Then, install the required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run the application
+
+Start the FastAPI server:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+The application will be available at `http://127.0.0.1:8000/docs` for Swagger UI.
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
