@@ -1,5 +1,4 @@
-
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File, Request, Depends
 from typing import List, Dict
 from langchain.embeddings import OllamaEmbeddings
 from langchain.vectorstores.pgvector import PGVector
@@ -8,6 +7,12 @@ from langchain.llms import Ollama
 from langchain.chains import RetrievalQA
 import asyncpg
 import json
+from prometheus_fastapi_instrumentator import Instrumentator
+from fastapi.security import OAuth2PasswordBearer
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from datetime import datetime
+import jwt
 
 app = FastAPI()
 
@@ -36,9 +41,32 @@ def get_vector_store():
         connection_string=DATABASE_URL
     )
 
+# --- RATE LIMITING SETUP ---
+limiter = Limiter(key_func=get_remote_address)
+
+# --- AUTHENTICATION SETUP ---
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# --- PROMETHEUS SETUP ---
+instrumentator = Instrumentator()
+
+@app.on_event("startup")
+async def startup():
+    instrumentator.instrument(app).expose(app, port=8001)
+
+# --- JWT AUTHENTICATION VERIFICATION ---
+def verify_token(token: str = Depends(oauth2_scheme)):
+    try:
+        # Decode the token (Assume 'SECRET_KEY' is your secret key)
+        payload = jwt.decode(token, "SECRET_KEY", algorithms=["HS256"])
+        return payload
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 # --- INGEST DOCUMENT ---
 @app.post("/ingest/")
-async def ingest_document(file: UploadFile = File(...)) -> Dict[str, str]:
+@limiter.limit("5/minute")
+async def ingest_document(file: UploadFile = File(...), user: str = Depends(verify_token)) -> Dict[str, str]:
     contents = await file.read()
     text = contents.decode("utf-8")
     document_name = file.filename
@@ -70,7 +98,8 @@ async def ingest_document(file: UploadFile = File(...)) -> Dict[str, str]:
 
 # --- Q&A API ---
 @app.post("/query/")
-async def query_qa(request: Request):
+@limiter.limit("5/minute")
+async def query_qa(request: Request, user: str = Depends(verify_token)):
     data = await request.json()
     question = data.get("question")
     selected_doc_ids = data.get("document_ids", [])
@@ -91,10 +120,11 @@ async def query_qa(request: Request):
 
 # --- LIST DOCUMENTS ---
 @app.get("/documents/")
-async def list_documents():
+async def list_documents(user: str = Depends(verify_token)):
     conn = await get_db_connection()
     try:
         rows = await conn.fetch("SELECT id, name FROM documents")
         return [{"id": row["id"], "name": row["name"]} for row in rows]
     finally:
         await conn.close()
+
