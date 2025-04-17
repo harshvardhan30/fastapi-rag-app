@@ -1,0 +1,28 @@
+# FastAPI + Web Server
+fastapi
+uvicorn[standard]
+
+# LangChain + Ollama
+langchain
+ollama
+
+# Embeddings + Vector DB
+pgvector
+asyncpg
+
+# Text splitting
+tiktoken
+
+# Prometheus Monitoring
+prometheus-fastapi-instrumentator
+
+# Rate Limiting
+slowapi
+
+# Testing
+pytest
+pytest-asyncio
+httpx
+
+# Optional: .env handling
+python-dotenv
